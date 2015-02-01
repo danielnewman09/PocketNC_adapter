@@ -100,11 +100,11 @@ class pocketNCAdapter(object):
             #time initialization: accumulated time: cut - auto - total
             if self.power.value() == 'ON':
                 ylt2=datetime.datetime.now()
-                if ex=='ACTIVE' and self.Srpm.value()!=None and float(self.Srpm.value())>0 and estop=='ARMED':
+                if ex=='ACTIVE' and self.Srpm.value()!=None and float(self.Srpm.value())>0 and estp == 'ARMED':
                     ct2=datetime.datetime.now()
                 else:
                     ct1=datetime.datetime.now()
-                if (ex=='ACTIVE' or ex=='STOPPED' or ex=='INTERRUPTED' or float(self.Srpm.value())>0) and estop=='ARMED':
+                if (ex=='ACTIVE' or ex=='STOPPED' or ex=='INTERRUPTED' or float(self.Srpm.value())>0) and estp == 'ARMED':
                     at2=datetime.datetime.now()
                 else:
                     at1=datetime.datetime.now()
@@ -133,18 +133,14 @@ class pocketNCAdapter(object):
             self.estop.set_value(estp)
             self.adapter.complete_gather()
 
-            if data.task_state == 'STATE_ON':
+            if data.task_state == linuxcnc.STATE_ON:
                 pwr = 'ON'
-            elif data.task_state == 'STATE_OFF':
-                pwr = 'OFF'
-            elif data.task_state == 'STATE_ESTOP':
-                pwr = 'E-STOP'
             else:
-                pwr = ''
+                pwr = 'OFF'
 
-            #self.adapter.begin_gather()
-            #self.power.set_value(pwr)
-            #self.adapter.complete_gather()
+            self.adapter.begin_gather()
+            self.power.set_value(pwr)
+            self.adapter.complete_gather()
             
             self.adapter.begin_gather()
             xps=str(format(data.actual_position[0], '.4f'))
@@ -252,5 +248,5 @@ class pocketNCAdapter(object):
 
 if __name__ == "__main__":
     print "Starting Up"
-    pocketNcadapter = pocketNCAdapter('192.168.7.2',7878)
+    pocketNcadapter = pocketNCAdapter('127.0.0.1',7878)
     
