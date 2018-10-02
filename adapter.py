@@ -133,6 +133,14 @@ class pocketNCAdapter(object):
             self.estop.set_value(estp)
             self.adapter.complete_gather()
 
+            if data.task_state == 'STATE_ON':
+                pwr = 'ON'
+            elif data.task_state == 'STATE_OFF':
+                pwr = 'OFF'
+            elif data.task_state == 'STATE_ESTOP':
+                pwr = 'E-STOP'
+            else:
+                pwr = ''
 
             #self.adapter.begin_gather()
             #self.power.set_value(pwr)
