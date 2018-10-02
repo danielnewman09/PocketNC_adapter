@@ -70,6 +70,8 @@ class pocketNCAdapter(object):
 
         self.adapter.start()
 
+        self.data_stream = linuxcnc.stat()
+
         self.adapter.begin_gather()
         self.avail.set_value("AVAILABLE")
         self.adapter.complete_gather()
@@ -77,7 +79,6 @@ class pocketNCAdapter(object):
         self.adapter_stream()
 
     def data_pull(self):
-        data = linuxcnc.stat()
         data.poll()
         return data
 
@@ -94,155 +95,154 @@ class pocketNCAdapter(object):
         ct=float(0) #initialized
         
         while True:
-            try:
-                data = self.data_pull()
-                
-                #time initialization: accumulated time: cut - auto - total
-                if self.power.value() == 'ON':
-                    ylt2=datetime.datetime.now()
-                    if ex=='ACTIVE' and self.Srpm.value()!=None and float(self.Srpm.value())>0 and estop=='ARMED':
-                        ct2=datetime.datetime.now()
-                    else:
-                        ct1=datetime.datetime.now()
-                    if (ex=='ACTIVE' or ex=='STOPPED' or ex=='INTERRUPTED' or float(self.Srpm.value())>0) and estop=='ARMED':
-                        at2=datetime.datetime.now()
-                    else:
-                        at1=datetime.datetime.now()
+            data = self.data_pull()
+            
+            #time initialization: accumulated time: cut - auto - total
+            if self.power.value() == 'ON':
+                ylt2=datetime.datetime.now()
+                if ex=='ACTIVE' and self.Srpm.value()!=None and float(self.Srpm.value())>0 and estop=='ARMED':
+                    ct2=datetime.datetime.now()
                 else:
-                    ylt1=datetime.datetime.now()
-
-
-
-                if data.state==1:
-                    ex='READY'
-                elif data.state==2:
-                    ex='ACTIVE'
+                    ct1=datetime.datetime.now()
+                if (ex=='ACTIVE' or ex=='STOPPED' or ex=='INTERRUPTED' or float(self.Srpm.value())>0) and estop=='ARMED':
+                    at2=datetime.datetime.now()
                 else:
-                    ex=''
-
-                self.adapter.begin_gather()
-                self._exec.set_value(ex)
-                self.adapter.complete_gather()
-
-                if data.estop!=1:
-                    estp='ARMED'
-                else:
-                    estp='TRIGGERED'
-
-                self.adapter.begin_gather()
-                self.estop.set_value(estp)
-                self.adapter.complete_gather()
+                    at1=datetime.datetime.now()
+            else:
+                ylt1=datetime.datetime.now()
 
 
-                self.adapter.begin_gather()
-                self.power.set_value(pwr)
-                self.adapter.complete_gather()
-                
-                self.adapter.begin_gather()
-                xps=str(format(data.actual_position[0], '.4f'))
-                self.Xabs.set_value(xps)
-                yps=str(format(data.actual_position[1], '.4f'))
-                self.Yabs.set_value(yps)
-                zps=str(format(data.actual_position[2], '.4f'))
-                self.Zabs.set_value(zps)
-                abs=str(format(data.actual_position[3], '.4f'))
-                self.Aabs.set_value(abs)
-                bbs=str(format(data.actual_position[4], '.4f'))
-                self.Babs.set_value(bbs)
 
-                self.adapter.complete_gather()
+            if data.state==1:
+                ex='READY'
+            elif data.state==2:
+                ex='ACTIVE'
+            else:
+                ex=''
 
-                ssp=str(data.spindle_speed)
-                self.adapter.begin_gather()
-                self.Srpm.set_value(ssp)
+            self.adapter.begin_gather()
+            self._exec.set_value(ex)
+            self.adapter.complete_gather()
 
-                ln=str(data.motion_line)
-                self.adapter.begin_gather()
-                self.line.set_value(ln)
+            if data.estop!=1:
+                estp='ARMED'
+            else:
+                estp='TRIGGERED'
 
-                pgm=str(data.file)
-                self.adapter.begin_gather()
-                self.program.set_value(pgm)
-
-                pfo=str(data.feedrate*100)
-                self.adapter.begin_gather()
-                self.Fovr.set_value(pfo)
-
-                so=str(data.spindlerate*100)
-                self.adapter.begin_gather()
-                self.Sovr.set_value(so)
-
-                tooln=str(data.tool_in_spindle)
-                self.adapter.begin_gather()
-                self.Tool_number.set_value(tooln)
-                self.adapter.complete_gather()
-
-                if data.task_mode==1:
-                    md='MDI'
-                elif data.task_mode==2:
-                    md='AUTOMATIC'
-                elif data.task_mode==3:
-                    md='MANUAL'
-                else:
-                    md=''
-
-                self.adapter.begin_gather()
-                self.mode.set_value(md)
-                self.adapter.complete_gather()
-
-                #time finalization: accumulated time, cut vs auto vs total
-                if ylt2!='initialize' and self.power.value()=='ON' and ylt1!=ylt2:
-                    #accumulated time:total time
-                    if (ylt2-ylt1).total_seconds()>=0:
-                        ylt+=(ylt2-ylt1).total_seconds()
-                    ylt1=ylt2
-                    if ylt>=0 and self.total_time.value()!=str(int(ylt)):
-                        self.adapter.begin_gather()
-                        self.total_time.set_value(str(int(ylt)))
-                        self.adapter.complete_gather()
-                    if ylt<0:
-                        ylt=float(0)
+            self.adapter.begin_gather()
+            self.estop.set_value(estp)
+            self.adapter.complete_gather()
 
 
-                    #accumulated time:cut time
-                    if ct2!='initialize' and ex=='ACTIVE' and self.Srpm.value()!=None and float(self.Srpm.value())>0 and self.estop.value()=='ARMED':
-                        if (ct2-ct1).total_seconds()>=0:
-                            ct+=(ct2-ct1).total_seconds()
-                        ct1=ct2
-                        if ct>=0 and self.cut_time.value()!=str(int(ct)):
-                            self.adapter.begin_gather()
-                            self.cut_time.set_value(str(int(ct)))
-                            self.adapter.complete_gather()
-                        if ct<0:
-                            ct=float(0)
+            self.adapter.begin_gather()
+            self.power.set_value(pwr)
+            self.adapter.complete_gather()
+            
+            self.adapter.begin_gather()
+            xps=str(format(data.actual_position[0], '.4f'))
+            self.Xabs.set_value(xps)
+            yps=str(format(data.actual_position[1], '.4f'))
+            self.Yabs.set_value(yps)
+            zps=str(format(data.actual_position[2], '.4f'))
+            self.Zabs.set_value(zps)
+            abs=str(format(data.actual_position[3], '.4f'))
+            self.Aabs.set_value(abs)
+            bbs=str(format(data.actual_position[4], '.4f'))
+            self.Babs.set_value(bbs)
 
-                    #accumulated time:auto time
-                    if (at2!='initialize' and ex=='ACTIVE' or ex=='INTERRUPTED' or ex=='STOPPED' or float(self.Srpm.value())>0) and self.estop.value()=='ARMED':
-                        if (at2-at1).total_seconds()>=0:
-                            at+=(at2-at1).total_seconds()
-                        at1=at2
-                        if at>=0 and self.auto_time.value()!=str(int(at)):
-                            self.adapter.begin_gather()
-                            self.auto_time.set_value(str(int(at)))
-                            self.adapter.complete_gather()
-                        if at<0:
-                            at=float(0)
+            self.adapter.complete_gather()
 
+            ssp=str(data.spindle_speed)
+            self.adapter.begin_gather()
+            self.Srpm.set_value(ssp)
 
-            except:
-                if self.power.value() and self.power.value()!='OFF':
+            ln=str(data.motion_line)
+            self.adapter.begin_gather()
+            self.line.set_value(ln)
+
+            pgm=str(data.file)
+            self.adapter.begin_gather()
+            self.program.set_value(pgm)
+
+            pfo=str(data.feedrate*100)
+            self.adapter.begin_gather()
+            self.Fovr.set_value(pfo)
+
+            so=str(data.spindlerate*100)
+            self.adapter.begin_gather()
+            self.Sovr.set_value(so)
+
+            tooln=str(data.tool_in_spindle)
+            self.adapter.begin_gather()
+            self.Tool_number.set_value(tooln)
+            self.adapter.complete_gather()
+
+            if data.task_mode==1:
+                md='MDI'
+            elif data.task_mode==2:
+                md='AUTOMATIC'
+            elif data.task_mode==3:
+                md='MANUAL'
+            else:
+                md=''
+
+            self.adapter.begin_gather()
+            self.mode.set_value(md)
+            self.adapter.complete_gather()
+
+            #time finalization: accumulated time, cut vs auto vs total
+            if ylt2!='initialize' and self.power.value()=='ON' and ylt1!=ylt2:
+                #accumulated time:total time
+                if (ylt2-ylt1).total_seconds()>=0:
+                    ylt+=(ylt2-ylt1).total_seconds()
+                ylt1=ylt2
+                if ylt>=0 and self.total_time.value()!=str(int(ylt)):
                     self.adapter.begin_gather()
-                    self.power.set_value('OFF')
+                    self.total_time.set_value(str(int(ylt)))
                     self.adapter.complete_gather()
-                    ylt2='initialize'
-                    ct2='initialize'
-                    at2='initialize'
+                if ylt<0:
+                    ylt=float(0)
 
-                ylt1=datetime.datetime.now() #initialized
-                at1=datetime.datetime.now() #initialized
-                ct1=datetime.datetime.now() #initialized
+
+                #accumulated time:cut time
+                if ct2!='initialize' and ex=='ACTIVE' and self.Srpm.value()!=None and float(self.Srpm.value())>0 and self.estop.value()=='ARMED':
+                    if (ct2-ct1).total_seconds()>=0:
+                        ct+=(ct2-ct1).total_seconds()
+                    ct1=ct2
+                    if ct>=0 and self.cut_time.value()!=str(int(ct)):
+                        self.adapter.begin_gather()
+                        self.cut_time.set_value(str(int(ct)))
+                        self.adapter.complete_gather()
+                    if ct<0:
+                        ct=float(0)
+
+                #accumulated time:auto time
+                if (at2!='initialize' and ex=='ACTIVE' or ex=='INTERRUPTED' or ex=='STOPPED' or float(self.Srpm.value())>0) and self.estop.value()=='ARMED':
+                    if (at2-at1).total_seconds()>=0:
+                        at+=(at2-at1).total_seconds()
+                    at1=at2
+                    if at>=0 and self.auto_time.value()!=str(int(at)):
+                        self.adapter.begin_gather()
+                        self.auto_time.set_value(str(int(at)))
+                        self.adapter.complete_gather()
+                    if at<0:
+                        at=float(0)
+
+            '''
+            if self.power.value() and self.power.value()!='OFF':
+                self.adapter.begin_gather()
+                self.power.set_value('OFF')
+                self.adapter.complete_gather()
+                ylt2='initialize'
+                ct2='initialize'
+                at2='initialize'
+
+            ylt1=datetime.datetime.now() #initialized
+            at1=datetime.datetime.now() #initialized
+            ct1=datetime.datetime.now() #initialized
+            '''
 
 if __name__ == "__main__":
     print "Starting Up"
-    pocketNcadapter = pocketNCAdapter('localhost',7878)
+    pocketNcadapter = pocketNCAdapter('192.168.7.2',7878)
     
