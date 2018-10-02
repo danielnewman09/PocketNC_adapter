@@ -79,8 +79,8 @@ class pocketNCAdapter(object):
         self.adapter_stream()
 
     def data_pull(self):
-        data.poll()
-        return data
+        self.data_stream.poll()
+        return self.data_stream
 
     def adapter_stream(self):
 
