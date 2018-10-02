@@ -134,9 +134,9 @@ class pocketNCAdapter(object):
             self.adapter.complete_gather()
 
 
-            self.adapter.begin_gather()
-            self.power.set_value(pwr)
-            self.adapter.complete_gather()
+            #self.adapter.begin_gather()
+            #self.power.set_value(pwr)
+            #self.adapter.complete_gather()
             
             self.adapter.begin_gather()
             xps=str(format(data.actual_position[0], '.4f'))
